@@ -1,9 +1,7 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 from darts.models import NHiTSModel
 from pytorch_lightning.callbacks import EarlyStopping
 from darts.dataprocessing.transformers import Scaler
-from dataloader import dataloader
+from train_model.dataloader import dataloader
 def define_nhits_model(in_len, out_len):
     """
     Setup the NHiTS model
@@ -44,9 +42,10 @@ def define_nhits_model(in_len, out_len):
     )
     return model
 
-file_path = r"E:\Coding\Python\kickbase_scraper\marktwerte1.csv"
-data = dataloader(file_path, True, 33, 2)
+file_path = r""
+input_len, output_len = 33, 2 # optimal parameters determined by hyperparameter tuning
+data = dataloader(file_path, True, input_len, output_len)
 train, val, pastcov_t, pastcov_val, raw = data
-model = define_nhits_model(33, 2)
+model = define_nhits_model(input_len, output_len)
 model.fit(series = train, val_series = val, past_covariates = pastcov_t, val_past_covariates = pastcov_val, verbose=True)
 model.save()
