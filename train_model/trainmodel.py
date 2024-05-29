@@ -42,7 +42,7 @@ def define_nhits_model(in_len, out_len):
     )
     return model
 
-file_path = r""
+file_path = r"" # path to csv file with marketvalues
 input_len, output_len = 33, 2 # optimal parameters determined by hyperparameter tuning
 data = dataloader(file_path, True, input_len, output_len)
 train, val, pastcov_t, pastcov_val, raw = data
