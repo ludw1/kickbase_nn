@@ -23,14 +23,15 @@ def clean_df(
     df = pd.get_dummies(df, columns=["Fit"])
     return df
 
-def dataloader(filepath : str, api : bool, in_len : int, out_len : int) -> list:
+def dataloader(filepath : str, api : bool, in_len : int, out_len : int, train : bool) -> list | tuple:
     """
     Load data from csv file
     :param filepath: str: Path to csv file
     :param api: bool: True if using api data
     :param in_len: int: Input length
     :param out_len: int: Output length
-    :return: list: List of TimeSeries
+    :param train: bool: True if training data is loaded
+    :return: list | tuple: List of timeseries or tuple of player dict
     """
     if api:
         csv_head = ["Name", "Time", "Fit", "Price"]
@@ -43,7 +44,7 @@ def dataloader(filepath : str, api : bool, in_len : int, out_len : int) -> list:
         df["Time"] = pd.to_datetime(df["Time"],format=("%Y-%m-%d")).dt.strftime('%d-%m-%y')
         
     else:
-        clean_df(df)
+        df = clean_df(df)
     df["Time"] = pd.to_datetime(df["Time"],format=("%d-%m-%y"))
     unique_players = df["Name"].unique()
     player_series_dict = {}
@@ -62,20 +63,23 @@ def dataloader(filepath : str, api : bool, in_len : int, out_len : int) -> list:
                 fit_dict[i] = fit_dict[i].drop_before(pd.to_datetime(datetime.now() - relativedelta(years=1)))
             else:
                 fit_dict[i] = TimeSeries.from_dataframe(player_df, "Time","Fit_Fit", freq="D")
-    time_series_list = list(player_series_dict.values())
-    fit_list = list(fit_dict.values())
-    scaler = Scaler()
-    train = []
-    val = []
-    past_cov_t = []
-    past_cov_v = []
-    for series,fit in zip(time_series_list,fit_list):
-        traintemp, valtemp = (scaler.fit_transform(series).split_after(trainval_split))
-        past_cov_train_temp, past_cov_val_temp = (scaler.fit_transform(fit).split_after(trainval_split))
-        # check if series is long enough
-        if len(valtemp) > in_len + out_len:
-            train.append(traintemp)
-            val.append(valtemp)
-            past_cov_t.append(past_cov_train_temp)
-            past_cov_v.append(past_cov_val_temp)
-    return train, val, past_cov_t, past_cov_v, time_series_list 
+    if train:
+        time_series_list = list(player_series_dict.values())
+        fit_list = list(fit_dict.values())
+        scaler = Scaler()
+        train = []
+        val = []
+        past_cov_t = []
+        past_cov_v = []
+        for series,fit in zip(time_series_list,fit_list):
+            traintemp, valtemp = (scaler.fit_transform(series).split_after(trainval_split))
+            past_cov_train_temp, past_cov_val_temp = (scaler.fit_transform(fit).split_after(trainval_split))
+            # check if series is long enough
+            if len(valtemp) > in_len + out_len:
+                train.append(traintemp)
+                val.append(valtemp)
+                past_cov_t.append(past_cov_train_temp)
+                past_cov_v.append(past_cov_val_temp)
+        return train, val, past_cov_t, past_cov_v, time_series_list
+    else:
+        return player_series_dict, fit_dict
