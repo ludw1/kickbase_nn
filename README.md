@@ -3,7 +3,7 @@ Project to use a neural net, more specifically the Transformers architecture, to
 ## Usage
 1. Install the necessary packages using ```pip install -r requirements.txt```
 2. Download pretrained model files from [here](https://drive.google.com/drive/folders/1D0JoHirmZWdJGNA7PA4MetbLUwjlBFvE?usp=sharing) or train the model yourself using ```trainmodel.py```
-3. Insert email and password into ```kbb.py``` and change options if needed
+3. Add email and password in config file and change options if needed.
 4. Run ```python kbb.py```
 ## Applications
 Applications include automatically placing bets on players available on the market based on model predictions and aiding managers in purchase decisions by forecasting price movements.
