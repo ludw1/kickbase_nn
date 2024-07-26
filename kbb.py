@@ -7,14 +7,15 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
 from nn_predict import nn_predict
 from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
+import tomllib
+# import config
+config_path = input("Please input path to config file: ")
+with open(config_path, "rb") as f:
+    config = tomllib.load(f)
+print(config)
 
-lookahead = 6 # how many days should be predicted into the future
-risk_value = lookahead - 3 # how many days should be used for the prediction, change the 3 
-overpay = 0.1 # percentage to overpay
 offered_players = {}
-email = "" # add email
-password = "" # add password
+
 def clean_apidata(injury_data : dict, value_data : dict) -> tuple[TimeSeries, TimeSeries] | None:
     """
     Clean the api data so we have 2 clean timeseries
@@ -82,8 +83,8 @@ while True:
         # JSON payload for the request
         # user needs to add email and password
         payload = {
-            "email": email,
-            "password": password,
+            "email": config["email"],
+            "password": config["password"],
             "ext": False
         }
 
@@ -134,9 +135,12 @@ while True:
             player_id = player["id"]
             if player_id in offered_players:
                 continue
-            if expiry < (60*60*16): # if less than 8 hours left, skip
-                continue
-            if expiry > (60*60*24*5): # if more than 5 days left, skip
+            player_filter = [(expiry < (60*60*config["low_time_bound"]) or expiry > (60*60*24*config["high_time_bound"])), 
+                             (player["marketValue"] < config["marketvaluelimit"]), (player["marketValueTrend"] == 2) and config["onlyrisingplayer"]
+                             , (player["status"] != 0 and config["onlyfitplayer"])]
+            print(player_filter)
+            print(player)
+            if True in player_filter:
                 continue
             
             url2 = f"https://api.kickbase.com/leagues/{league_id}/players/{player_id}/stats"
@@ -151,13 +155,13 @@ while True:
                 if value_series is None:
                     continue
                 # now pass to model
-                pred = nn_predict(value_series, fit_series, r"NHiTSModel_2024-07-19_11_24_34.pt", lookahead)
+                pred = nn_predict(value_series, fit_series, config["modelpath"], config["lookahead"])
                 # now fit a polynomial function to the prediction including the last value
                 prediction_points = [value_series.pd_series().tolist()[-1]] + pred.pd_series().tolist()
                 pred_fit = curve_fit(lambda x,a,b,c,d,e: a*x**4 + b*x**3 + c*x**2 + d*x + e, np.array(range(len(prediction_points))), prediction_points)
                 pred_function = lambda x: pred_fit[0][0]*x**4 + pred_fit[0][1]*x**3 + pred_fit[0][2]*x**2 + pred_fit[0][3]*x + pred_fit[0][4]
                 # scale offer by overpay value
-                offer = pred_function(risk_value) * (1 + overpay)
+                offer = pred_function(config["risk_value"]) * (1 + config["overpay"])
                 if offer > budget:
                     continue
                 else:

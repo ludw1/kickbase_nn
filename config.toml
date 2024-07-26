@@ -1,0 +1,12 @@
+
+lookahead = 6 # how many days should be predicted into the future
+risk_value = 3 # how many days should be used for the prediction, max = lookahead
+overpay = 0.1 # percentage to overpay
+low_time_bound = 8 # time until expiry in hours below which no offer will be made
+high_time_bound = 5 # time until expiry in days above which no offer will be made
+marketvaluelimit = 5000000 # only offer on players with more marketvalue than this
+onlyrisingplayer = true # only offer on players that have a rising trend
+onlyfitplayer = true # only offer on players that are fit
+modelpath = "kickbase_nn/NHiTSModel_2024-07-19_11_24_34.pt" # path to model file
+email = "ludwigkremer3@googlemail.com" # add email
+password = "kickbase123" # add password
